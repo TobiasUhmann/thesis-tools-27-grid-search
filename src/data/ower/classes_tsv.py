@@ -34,7 +34,7 @@ class ClassesTsv(BaseFile):
 
         with open(self.path, encoding='utf-8') as f:
             csv_reader = csv.reader(f, delimiter='\t')
-            next(csv_reader)
+            csv_reader.next()
 
             rows = []
             for rel, tail, freq, label in csv_reader:

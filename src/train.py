@@ -100,7 +100,9 @@ def parse_args():
 
     args = parser.parse_args()
 
-    ## Log applied config
+    #
+    # Log applied config
+    #
 
     logging.info('Applied config:')
     logging.info('    {:24} {}'.format('ower-dir', args.ower_dir))
@@ -142,16 +144,22 @@ def train(args):
     update_vectors = args.update_vectors
     vectors = args.vectors
 
-    ## Check that (input) OWER Directory exists
+    #
+    # Check that (input) OWER Directory exists
+    #
 
     ower_dir = OwerDir(Path(ower_dir_path))
     ower_dir.check()
 
-    ## Create (output) save dir if it does not exist already
+    #
+    # Create (output) save dir if it does not exist already
+    #
 
     os.makedirs(save_dir, exist_ok=True)
 
-    ## Load datasets
+    #
+    # Load datasets
+    #
 
     train_set: List[Sample]
     valid_set: List[Sample]
@@ -161,7 +169,9 @@ def train(args):
     else:
         train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count, vectors)
 
-    ## Create dataloaders
+    #
+    # Create dataloaders
+    #
 
     def generate_batch(batch: List[Sample]) -> Tuple[Tensor, Tensor, Tensor]:
         """
@@ -185,14 +195,18 @@ def train(args):
     train_loader = DataLoader(train_set, batch_size=batch_size, collate_fn=generate_batch, shuffle=True)
     valid_loader = DataLoader(valid_set, batch_size=batch_size, collate_fn=generate_batch)
 
-    ## Calc class weights
+    #
+    # Calc class weights
+    #
 
     _, train_classes_stack, _ = zip(*train_set)
     train_freqs = np.array(train_classes_stack).mean(axis=0)
 
     class_weights = tensor(1 / train_freqs)
 
-    ## Create model
+    #
+    # Create model
+    #
 
     model = create_model(model_name, emb_size, vocab, class_count, mode, update_vectors).to(device)
 
@@ -201,7 +215,9 @@ def train(args):
 
     writer = SummaryWriter(log_dir=log_dir)
 
-    ## Train and validate
+    #
+    # Train and validate
+    #
 
     best_valid_f1 = 0
 
@@ -216,7 +232,9 @@ def train(args):
             'valid': {'loss': 0.0, 'pred_classes_stack': [], 'gt_classes_stack': []}
         }
 
-        ## Train
+        #
+        # Train
+        #
 
         for _, sents_batch, gt_batch in tqdm(train_loader, desc=f'Epoch {epoch}'):
             train_progress += len(sents_batch)
@@ -231,7 +249,9 @@ def train(args):
             loss.backward()
             optimizer.step()
 
-            ## Log metrics
+            #
+            # Log metrics
+            #
 
             pred_batch = (logits_batch > 0).int()
 
@@ -254,7 +274,9 @@ def train(args):
                 log_class_metrics(step_metrics, writer, train_progress, class_count)
                 log_macro_metrics(step_metrics, writer, train_progress)
 
-        ## Validate
+        #
+        # Validate
+        #
 
         with torch.no_grad():
             for _, sents_batch, gt_batch, in tqdm(valid_loader, desc=f'Epoch {epoch}'):
@@ -266,7 +288,9 @@ def train(args):
                 logits_batch = model(sents_batch)
                 loss = criterion(logits_batch, gt_batch)
 
-                ## Log metrics
+                #
+                # Log metrics
+                #
 
                 pred_batch = (logits_batch > 0).int()
 
@@ -289,19 +313,25 @@ def train(args):
                     log_class_metrics(step_metrics, writer, valid_progress, class_count)
                     log_macro_metrics(step_metrics, writer, valid_progress)
 
-        ## Log loss
+        #
+        # Log loss
+        #
 
         train_loss = epoch_metrics['train']['loss'] / len(train_loader)
         valid_loss = epoch_metrics['valid']['loss'] / len(valid_loader)
 
         writer.add_scalars('loss', {'train': train_loss, 'valid': valid_loss}, epoch)
 
-        ## Log metrics
+        #
+        # Log metrics
+        #
 
         log_class_metrics(epoch_metrics, writer, epoch, class_count)
         valid_f1 = log_macro_metrics(epoch_metrics, writer, epoch)
 
-        ## Store model
+        #
+        # Store model
+        #
 
         if (save_dir is not None) and (valid_f1 > best_valid_f1):
             best_valid_f1 = valid_f1
