@@ -68,7 +68,7 @@ def parse_args():
     parser.add_argument('--log-steps', dest='log_steps', action='store_true',
                         help='Log after steps, in addition to epochs')
 
-    default_learning_rate = 0.1
+    default_learning_rate = 0.01
     parser.add_argument('--lr', dest='lr', type=float, metavar='FLOAT', default=default_learning_rate,
                         help='Learning rate (default: {})'.format(default_learning_rate))
 
@@ -155,7 +155,8 @@ def train(args):
     # Create (output) save dir if it does not exist already
     #
 
-    os.makedirs(save_dir, exist_ok=True)
+    if save_dir is not None:
+        os.makedirs(save_dir, exist_ok=True)
 
     #
     # Load datasets
@@ -175,11 +176,11 @@ def train(args):
 
     def generate_batch(batch: List[Sample]) -> Tuple[Tensor, Tensor, Tensor]:
         """
-        :param batch: [Sample(ent, [class], [sent])]
+        :param    batch:          [Sample(ent, [class], [sent])]
 
-        :return: ent_batch      IntTensor(batch_size),
-                 sents_batch    IntTensor(batch_size, sent_count, sent_len),
-                 classes_batch  IntTensor(batch_size, class_count)
+        :return:  ent_batch:      IntTensor[batch_size],
+                  sents_batch:    IntTensor[batch_size, sent_count, sent_len],
+                  classes_batch:  IntTensor[batch_size, class_count]
         """
 
         ent_batch, classes_batch, sents_batch = zip(*batch)

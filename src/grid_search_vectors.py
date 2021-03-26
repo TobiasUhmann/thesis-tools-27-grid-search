@@ -52,6 +52,7 @@ def main():
                 args.save_dir = f'models/vectors_{model}_{vectors}_{i}'
                 args.vectors = vectors
 
+                logging.info(f'Training model {model} with pre-trained vectors {vectors}')
                 train(args)
 
 

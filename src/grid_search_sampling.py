@@ -43,6 +43,7 @@ def main():
                 args.model = model
                 args.save_dir = f'models/sampling_{model}_{dataset}_{i}'
 
+                logging.info(f'Training model {model} on random-sample dataset {dataset}')
                 train(args)
 
 

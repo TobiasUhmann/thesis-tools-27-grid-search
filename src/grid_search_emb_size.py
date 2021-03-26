@@ -36,6 +36,7 @@ def main():
                 args.model = model
                 args.save_dir = f'models/emb_size_{model}_{emb_size}_{i}'
 
+                logging.info(f'Training model {model} with emb size {emb_size}')
                 train(args)
 
 

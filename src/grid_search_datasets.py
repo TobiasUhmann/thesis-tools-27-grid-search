@@ -51,6 +51,7 @@ def main():
                 args.model = model
                 args.save_dir = f'models/datasets_{model}_{dataset}_{i}'
 
+                logging.info(f'Training model {model} on dataset {dataset}')
                 train(args)
 
 

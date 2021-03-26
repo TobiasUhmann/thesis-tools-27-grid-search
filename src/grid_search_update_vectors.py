@@ -36,6 +36,7 @@ def main():
                 args.save_dir = f'models/update_vectors_{model}_{update_vectors}_{i}'
                 args.update_vectors = update_vectors
 
+                logging.info(f'Training model {model} with --update-vectors == {update_vectors}')
                 train(args)
 
 

@@ -34,6 +34,7 @@ def main():
             args.model = model
             args.save_dir = f'models/model_{model}_{i}'
 
+            logging.info(f'Training model {model}')
             train(args)
 
 

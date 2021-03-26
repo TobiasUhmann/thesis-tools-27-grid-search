@@ -36,6 +36,7 @@ def main():
                 args.model = model
                 args.save_dir = f'models/pooling_{model}_{mode}_{i}'
 
+                logging.info(f'Training model {model} with {mode} pooling')
                 train(args)
 
 
