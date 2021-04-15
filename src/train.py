@@ -90,6 +90,11 @@ def parse_args():
                         help='Sentence length short sentences are padded and long sentences cropped to'
                              ' (default: {})'.format(default_sent_len))
 
+    tokenizer_choices = ['spacy', 'whitespace']
+    default_tokenizer = 'spacy'
+    parser.add_argument('--tokenizer', dest='tokenizer', choices=tokenizer_choices, default=default_tokenizer,
+                        help='How to split sentences into tokens (default: {})'.format(default_tokenizer))
+
     parser.add_argument('--update-vectors', dest='update_vectors', action='store_true',
                         help='Update pre-trained word embeddings during training')
 
@@ -119,6 +124,7 @@ def parse_args():
     logging.info('    {:24} {}'.format('--model', args.model))
     logging.info('    {:24} {}'.format('--save-dir', args.save_dir))
     logging.info('    {:24} {}'.format('--sent-len', args.sent_len))
+    logging.info('    {:24} {}'.format('--tokenizer', args.tokenizer))
     logging.info('    {:24} {}'.format('--update-vectors', args.update_vectors))
     logging.info('    {:24} {}'.format('--vectors', args.vectors))
 
@@ -141,6 +147,7 @@ def train(args):
     model_name = args.model
     save_dir = args.save_dir
     sent_len = args.sent_len
+    tokenizer = args.tokenizer
     update_vectors = args.update_vectors
     vectors = args.vectors
 
@@ -166,9 +173,9 @@ def train(args):
     valid_set: List[Sample]
 
     if emb_size is not None:
-        train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count)
+        train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count, tokenizer=tokenizer)
     else:
-        train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count, vectors)
+        train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count, vectors, tokenizer)
 
     #
     # Create dataloaders

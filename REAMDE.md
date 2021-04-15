@@ -9,3 +9,12 @@ the sentence.
 
 Try min/max pooling for getting the sentence embedding and compare the 
 results with the usual mean pooling.
+
+# Setup
+
+## Install SpaCy
+
+```bash
+python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_lg
+```

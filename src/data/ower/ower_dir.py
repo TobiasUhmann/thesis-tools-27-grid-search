@@ -22,11 +22,13 @@ for debugging purposes.
 
 |
 """
-
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
 
+import spacy
+from spacy.lang.en import English
 from torchtext.data import TabularDataset, Field
 from torchtext.vocab import Vocab
 
@@ -92,14 +94,26 @@ class OwerDir(BaseDir):
 
         self.tmp_dir.create()
 
-    def read_datasets(self, class_count: int, sent_count: int, vectors=None) \
+    def read_datasets(self, class_count: int, sent_count: int, vectors=None, tokenizer='spacy') \
             -> Tuple[List[Sample], List[Sample], List[Sample], Vocab]:
         """
         :param vectors: Pre-trained word embeddings
+        :param tokenizer: One of ['spacy', 'whitespace']
         """
 
-        def tokenize(text: str) -> List[str]:
-            return text.split()
+        if tokenizer == 'whitespace':
+            def tokenize(text: str) -> List[str]:
+                return text.strip().split()
+
+        elif tokenizer == 'spacy':
+            nlp = English()
+            spacy_tokenizer = nlp.tokenizer
+
+            def tokenize(text: str) -> List[str]:
+                return [token.text for token in spacy_tokenizer(text.strip())]
+
+        else:
+            raise ValueError(f"tokenizer must be one of {['spacy', 'whitespace']}")
 
         ent_field = Field(sequential=False, use_vocab=False)
         ent_label_field = Field()
@@ -123,6 +137,7 @@ class OwerDir(BaseDir):
 
         sent_field.build_vocab(train_tab_set, vectors=vectors)
         vocab = sent_field.vocab
+        logging.info(f'Vocab size: {len(vocab)}')
 
         #
         # Transform TabularDataset -> List[Sample]
