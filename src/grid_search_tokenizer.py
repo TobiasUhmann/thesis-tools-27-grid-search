@@ -46,13 +46,12 @@ def main():
         for dataset, sent_count in dataset_choices:
             for model in ['base', 'ower']:
                 for tokenizer in ['spacy', 'whitespace']:
-
                     args.ower_dir = f'data/ower/{dataset}'
                     args.sent_count = sent_count
 
-                    args.log_dir = f'runs/tokenizers_{model}_{dataset}_{tokenizer}_{i}'
+                    args.log_dir = f'runs/tokenizers/{model}_{dataset}_{tokenizer}_{i}'
                     args.model = model
-                    args.save_dir = f'models/tokenizers_{model}_{dataset}_{tokenizer}_{i}'
+                    args.save_dir = f'models/tokenizers/{model}_{dataset}_{tokenizer}_{i}'
                     args.tokenizer = tokenizer
 
                     logging.info(f'Training model {model} on dataset {dataset} with tokenizer {tokenizer}')
