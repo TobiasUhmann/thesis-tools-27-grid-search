@@ -50,11 +50,11 @@ def main():
                     args.sent_count = sent_count
 
                     args.emb_size = emb_size
-                    args.log_dir = f'runs/emb_size/{model}_{emb_size}_{i}'
+                    args.log_dir = f'runs/emb_size/{dataset}_{model}_{emb_size}_{i}'
                     args.model = model
-                    args.save_dir = f'models/emb_size/{model}_{emb_size}_{i}'
+                    args.save_dir = f'models/emb_size/{dataset}_{model}_{emb_size}_{i}'
 
-                    logging.info(f'Training model {model} on dataset {dataset} with emb size {emb_size}')
+                    logging.info(f'Training on dataset {dataset} using model {model} with emb size {emb_size}')
                     train(args)
 
 
