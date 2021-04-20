@@ -1,4 +1,6 @@
 /.vector_cache/
+/conda39/
 /data/
+/logs/
 /models/
 /runs/
