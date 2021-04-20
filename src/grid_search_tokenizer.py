@@ -24,6 +24,7 @@ def main():
     # args.model
     # args.save_dir
     args.sent_len = 64
+    args.test = True
     # args.tokenizer
     args.update_vectors = False
     args.vectors = 'glove.6B.300d'

@@ -1,9 +1,10 @@
 import logging
 import os
+import pickle
 from argparse import ArgumentParser
 from pathlib import Path
 from random import shuffle
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import numpy as np
 import torch
@@ -90,6 +91,9 @@ def parse_args():
                         help='Sentence length short sentences are padded and long sentences cropped to'
                              ' (default: {})'.format(default_sent_len))
 
+    parser.add_argument('--test', dest='test', action='store_true',
+                        help='Evaluate on test data after training')
+
     tokenizer_choices = ['spacy', 'whitespace']
     default_tokenizer = 'spacy'
     parser.add_argument('--tokenizer', dest='tokenizer', choices=tokenizer_choices, default=default_tokenizer,
@@ -124,6 +128,7 @@ def parse_args():
     logging.info('    {:24} {}'.format('--model', args.model))
     logging.info('    {:24} {}'.format('--save-dir', args.save_dir))
     logging.info('    {:24} {}'.format('--sent-len', args.sent_len))
+    logging.info('    {:24} {}'.format('--test', args.test))
     logging.info('    {:24} {}'.format('--tokenizer', args.tokenizer))
     logging.info('    {:24} {}'.format('--update-vectors', args.update_vectors))
     logging.info('    {:24} {}'.format('--vectors', args.vectors))
@@ -147,6 +152,7 @@ def train(args):
     model_name = args.model
     save_dir = args.save_dir
     sent_len = args.sent_len
+    test = args.test
     tokenizer = args.tokenizer
     update_vectors = args.update_vectors
     vectors = args.vectors
@@ -171,11 +177,12 @@ def train(args):
 
     train_set: List[Sample]
     valid_set: List[Sample]
+    test_set: List[Sample]
 
     if emb_size is not None:
-        train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count, tokenizer=tokenizer)
+        train_set, valid_set, test_set, vocab = ower_dir.read_datasets(class_count, sent_count, tokenizer=tokenizer)
     else:
-        train_set, valid_set, _, vocab = ower_dir.read_datasets(class_count, sent_count, vectors, tokenizer)
+        train_set, valid_set, test_set, vocab = ower_dir.read_datasets(class_count, sent_count, vectors, tokenizer)
 
     #
     # Create dataloaders
@@ -202,6 +209,7 @@ def train(args):
 
     train_loader = DataLoader(train_set, batch_size=batch_size, collate_fn=generate_batch, shuffle=True)
     valid_loader = DataLoader(valid_set, batch_size=batch_size, collate_fn=generate_batch)
+    test_loader = DataLoader(test_set, batch_size=batch_size, collate_fn=generate_batch)
 
     #
     # Calc class weights
@@ -343,7 +351,72 @@ def train(args):
 
         if (save_dir is not None) and (valid_f1 > best_valid_f1):
             best_valid_f1 = valid_f1
-            torch.save(model.state_dict(), f'{save_dir}/model.pt')
+
+            with open(f'{save_dir}/model.pt', 'wb') as f:
+                pickle.dump(model, f)
+
+    #
+    # Load model and test
+    #
+
+    if test:
+        if save_dir is not None:
+            with open(f'{save_dir}/model.pt', 'rb') as f:
+                model = pickle.load(f)
+
+        test_progress = 0
+        epoch_metrics = {
+            'test': {'loss': 0.0, 'pred_classes_stack': [], 'gt_classes_stack': []}
+        }
+
+        with torch.no_grad():
+            for _, sents_batch, gt_batch, in tqdm(test_loader, desc=f'Test'):
+                test_progress += len(sents_batch)
+
+                sents_batch = sents_batch.to(device)
+                gt_batch = gt_batch.to(device).float()
+
+                logits_batch = model(sents_batch)
+                loss = criterion(logits_batch, gt_batch)
+
+                #
+                # Log metrics
+                #
+
+                pred_batch = (logits_batch > 0).int()
+
+                step_loss = loss.item()
+                step_pred_batch = pred_batch.cpu().numpy().tolist()
+                step_gt_batch = gt_batch.cpu().numpy().tolist()
+
+                epoch_metrics['test']['loss'] += step_loss
+                epoch_metrics['test']['pred_classes_stack'] += step_pred_batch
+                epoch_metrics['test']['gt_classes_stack'] += step_gt_batch
+
+                if log_steps:
+                    writer.add_scalars('loss', {'test': step_loss}, test_progress)
+
+                    step_metrics = {'test': {
+                        'pred_classes_stack': step_pred_batch,
+                        'gt_classes_stack': step_gt_batch
+                    }}
+
+                    log_class_metrics(step_metrics, None, test_progress, class_count)
+                    log_macro_metrics(step_metrics, None, test_progress)
+
+        #
+        # Log loss
+        #
+
+        test_loss = epoch_metrics['test']['loss'] / len(test_loader)
+        logging.info(f'Test Loss = {test_loss}')
+
+        #
+        # Log metrics
+        #
+
+        log_class_metrics(epoch_metrics, None, -1, class_count)
+        log_macro_metrics(epoch_metrics, None, -1)
 
 
 def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int, mode: str, update_vectors: bool):
@@ -369,7 +442,7 @@ def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int,
         raise
 
 
-def log_class_metrics(data: Dict, writer: SummaryWriter, x: int, class_count: int) -> None:
+def log_class_metrics(data: Dict, writer: Optional[SummaryWriter], x: int, class_count: int) -> None:
     """
     Calculate class-wise metrics and log metrics of most/least common metrics to Tensorboard
 
@@ -390,16 +463,23 @@ def log_class_metrics(data: Dict, writer: SummaryWriter, x: int, class_count: in
                                                     zero_division=0)
 
         # c = class
-        for c, (prec, rec, f1, _), in enumerate(zip(*prfs_list)):
+        for c, (prec, rec, f1, supp), in enumerate(zip(*prfs_list)):
             if c not in log_classes:
                 continue
 
-            writer.add_scalars('precision', {f'{split}_{c}': prec}, x)
-            writer.add_scalars('recall', {f'{split}_{c}': rec}, x)
-            writer.add_scalars('f1', {f'{split}_{c}': f1}, x)
+            if writer is None:
+                logging.info(f'Precision {c} = {prec:.4f}')
+                logging.info(f'Recall {c} = {rec:.4f}')
+                logging.info(f'F1 {c} = {f1:.4f}')
+                logging.info(f'Support {c} = {supp}')
+            else:
+                writer.add_scalars('precision', {f'{split}_{c}': prec}, x)
+                writer.add_scalars('recall', {f'{split}_{c}': rec}, x)
+                writer.add_scalars('f1', {f'{split}_{c}': f1}, x)
+                writer.add_scalars('support', {f'{split}_{c}': supp}, x)
 
 
-def log_macro_metrics(data: Dict, writer: SummaryWriter, x: int) -> float:
+def log_macro_metrics(data: Dict, writer: Optional[SummaryWriter], x: int) -> float:
     """
     Calculate macro metrics across all classes and log them to Tensorboard
 
@@ -417,9 +497,14 @@ def log_macro_metrics(data: Dict, writer: SummaryWriter, x: int) -> float:
                                                            average='macro',
                                                            zero_division=0)
 
-        writer.add_scalars('precision', {split: prec}, x)
-        writer.add_scalars('recall', {split: rec}, x)
-        writer.add_scalars('f1', {split: f1}, x)
+        if writer is None:
+            logging.info(f'Precision = {prec:.4f}')
+            logging.info(f'Recall = {rec:.4f}')
+            logging.info(f'F1 = {f1:.4f}')
+        else:
+            writer.add_scalars('precision', {split: prec}, x)
+            writer.add_scalars('recall', {split: rec}, x)
+            writer.add_scalars('f1', {split: f1}, x)
 
     return f1
 
