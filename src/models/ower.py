@@ -1,17 +1,16 @@
 import torch
 from torch import Tensor
-from torch.nn import Module, EmbeddingBag, Parameter, Softmax
+from torch.nn import Module, EmbeddingBag, Parameter, Softmax, Sigmoid, ReLU
 from torchtext.vocab import Vocab
 
 
 class Ower(Module):
-
     embedding_bag: EmbeddingBag
     class_embs: Parameter
     multi_weight: Parameter
     multi_bias: Parameter
 
-    def __init__(self, embedding_bag: EmbeddingBag, class_count: int):
+    def __init__(self, embedding_bag: EmbeddingBag, class_count: int, activation: str):
         super().__init__()
 
         self.embedding_bag = embedding_bag
@@ -21,17 +20,28 @@ class Ower(Module):
         self.multi_weight = Parameter(torch.randn(class_count, emb_size))
         self.multi_bias = Parameter(torch.randn(class_count))
 
+        if activation == 'softmax':
+            self.activation = Softmax(dim=-1)
+        elif activation == 'sigmoid':
+            self.activation = Sigmoid()
+        elif activation == 'relu':
+            self.activation = ReLU()
+        elif activation == 'none':
+            self.activation = None
+        else:
+            raise ValueError(f'Invalid activation function {activation}')
+
     @classmethod
-    def from_random(cls, vocab_size: int, emb_size: int, class_count: int, mode: str):
+    def from_random(cls, vocab_size: int, emb_size: int, class_count: int, mode: str, activation: str):
         embedding_bag = EmbeddingBag(num_embeddings=vocab_size, embedding_dim=emb_size, mode=mode)
 
-        return cls(embedding_bag, class_count)
+        return cls(embedding_bag, class_count, activation)
 
     @classmethod
-    def from_pre_trained(cls, vocab: Vocab, class_count: int, mode: str, update_vectors: bool):
+    def from_pre_trained(cls, vocab: Vocab, class_count: int, mode: str, update_vectors: bool, activation: str):
         embedding_bag = EmbeddingBag.from_pretrained(vocab.vectors, mode=mode, freeze=(not update_vectors))
 
-        return cls(embedding_bag, class_count)
+        return cls(embedding_bag, class_count, activation)
 
     def forward(self, tok_lists_batch: Tensor) -> Tensor:
         """
@@ -126,12 +136,12 @@ class Ower(Module):
 
         atts_batch = torch.bmm(class_embs_batch, sents_batch.transpose(1, 2))
 
-        # Softmax over sentences
+        # Apply activation function, e.g. softmax
         #
         # < atts_batch   (batch_size, class_count, sent_count)
         # > softs_batch  (batch_size, class_count, sent_count)
 
-        softs_batch = Softmax(dim=-1)(atts_batch)
+        softs_batch = self.activation(atts_batch) if self.activation is not None else atts_batch
 
         return softs_batch
 

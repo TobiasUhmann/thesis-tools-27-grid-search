@@ -13,6 +13,7 @@ def main():
     args.class_count = 100
     # args.sent_count
 
+    args.activation = 'sigmoid'
     args.batch_size = 1024
     args.device = 'cuda'
     args.emb_size = None

@@ -48,6 +48,11 @@ def parse_args():
                         help='Where to perform tensor operations, one of {} (default: {})'.format(
                             device_choices, default_device))
 
+    activation_choices = ['softmax', 'sigmoid', 'relu', 'none']
+    default_activation = 'sigmoid'
+    parser.add_argument('--activation', dest='activation', choices=activation_choices, default=default_activation,
+                        help="Activation function for the OWER model's attention mechanism")
+
     default_batch_size = 1024
     parser.add_argument('--batch-size', dest='batch_size', type=int, metavar='INT', default=default_batch_size,
                         help='Batch size (default: {})'.format(default_batch_size))
@@ -116,6 +121,7 @@ def parse_args():
     logging.info('    {:24} {}'.format('ower-dir', args.ower_dir))
     logging.info('    {:24} {}'.format('class-count', args.class_count))
     logging.info('    {:24} {}'.format('sent-count', args.sent_count))
+    logging.info('    {:24} {}'.format('--activation', args.activation))
     logging.info('    {:24} {}'.format('--batch-size', args.batch_size))
     logging.info('    {:24} {}'.format('--device', args.device))
     logging.info('    {:24} {}'.format('--emb-size', args.emb_size))
@@ -140,6 +146,7 @@ def train(args):
     class_count = args.class_count
     sent_count = args.sent_count
 
+    activation = args.activation
     batch_size = args.batch_size
     device = args.device
     emb_size = args.emb_size
@@ -223,7 +230,7 @@ def train(args):
     # Create model
     #
 
-    model = create_model(model_name, emb_size, vocab, class_count, mode, update_vectors).to(device)
+    model = create_model(model_name, emb_size, vocab, class_count, mode, update_vectors, activation).to(device)
 
     optimizer = Adam(model.parameters(), lr=lr)
     criterion = BCEWithLogitsLoss(pos_weight=class_weights.to(device))
@@ -418,7 +425,8 @@ def train(args):
         log_macro_metrics(epoch_metrics, None, -1)
 
 
-def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int, mode: str, update_vectors: bool):
+def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int, mode: str, update_vectors: bool,
+                 activation: str):
     if model_name == 'base':
         if emb_size is None:
             return Base.from_pre_trained(vocab, class_count, mode, update_vectors)
@@ -427,9 +435,9 @@ def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int,
 
     elif model_name == 'ower':
         if emb_size is None:
-            return Ower.from_pre_trained(vocab, class_count, mode, update_vectors)
+            return Ower.from_pre_trained(vocab, class_count, mode, update_vectors, activation)
         else:
-            return Ower.from_random(len(vocab), emb_size, class_count, mode)
+            return Ower.from_random(len(vocab), emb_size, class_count, mode, activation)
 
     else:
         raise
