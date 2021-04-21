@@ -422,7 +422,17 @@ def train(args):
         #
 
         log_class_metrics(epoch_metrics, None, -1, class_count)
-        log_macro_metrics(epoch_metrics, None, -1)
+
+        for split, metrics in epoch_metrics.items():
+            prec, rec, f1, _ = precision_recall_fscore_support(metrics['gt_classes_stack'],
+                                                               metrics['pred_classes_stack'],
+                                                               average='macro',
+                                                               zero_division=0)
+
+            with open(f'{save_dir}/eval.txt', 'w') as f:
+                f.write(f'Precision = {prec:.4f}\n')
+                f.write(f'Recall = {rec:.4f}\n')
+                f.write(f'F1 = {f1:.4f}\n')
 
 
 def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int, mode: str, update_vectors: bool,
