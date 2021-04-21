@@ -16,7 +16,7 @@ def main():
     args.batch_size = 1024
     args.device = 'cuda'
     # args.emb_size
-    args.epoch_count = 100
+    args.epoch_count = 200
     # args.log_dir
     args.log_steps = False
     args.lr = 0.01
@@ -26,7 +26,7 @@ def main():
     args.sent_len = 64
     args.test = True
     args.tokenizer = 'spacy'
-    args.update_vectors = False
+    args.update_vectors = None
     args.vectors = None
 
     dataset_choices = [
@@ -42,20 +42,19 @@ def main():
         ('ower-v4-fb-owe-100-1', 1)
     ]
 
-    for i in range(1):
-        for dataset, sent_count in dataset_choices:
-            for model in ['base', 'ower']:
-                for emb_size in [1, 3, 10, 30, 100, 300, 1000]:
-                    args.ower_dir = f'data/ower/{dataset}'
-                    args.sent_count = sent_count
+    for dataset, sent_count in dataset_choices:
+        for model in ['base', 'ower']:
+            for emb_size in [1, 3, 10, 30, 100, 300, 1000]:
+                args.ower_dir = f'data/ower/{dataset}'
+                args.sent_count = sent_count
 
-                    args.emb_size = emb_size
-                    args.log_dir = f'runs/emb_size/{dataset}_{model}_{emb_size}_{i}'
-                    args.model = model
-                    args.save_dir = f'models/emb_size/{dataset}_{model}_{emb_size}_{i}'
+                args.emb_size = emb_size
+                args.log_dir = f'runs/emb_size/{dataset}_{model}_{emb_size}'
+                args.model = model
+                args.save_dir = f'models/emb_size/{dataset}_{model}_{emb_size}'
 
-                    logging.info(f'Training on dataset {dataset} using model {model} with emb size {emb_size}')
-                    train(args)
+                logging.info(f'Training on dataset {dataset} using model {model} with emb size {emb_size}')
+                train(args)
 
 
 if __name__ == '__main__':
