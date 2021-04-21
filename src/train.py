@@ -19,7 +19,6 @@ from tqdm import tqdm
 
 from data.ower.ower_dir import OwerDir, Sample
 from models.base import Base
-from models.base_concat import BaseConcat
 from models.ower import Ower
 
 
@@ -77,7 +76,7 @@ def parse_args():
     default_mode = 'mean'
     parser.add_argument('--mode', dest='mode', choices=mode_choices, default=default_mode)
 
-    model_choices = ['base', 'base-concat', 'ower']
+    model_choices = ['base', 'ower']
     default_model_choice = 'ower'
     parser.add_argument('--model', dest='model', choices=model_choices, default=default_model_choice,
                         help='Classifier to be trained (default: {})'.format(default_model_choice))
@@ -425,12 +424,6 @@ def create_model(model_name: str, emb_size: int, vocab: Vocab, class_count: int,
             return Base.from_pre_trained(vocab, class_count, mode, update_vectors)
         else:
             return Base.from_random(len(vocab), emb_size, class_count, mode)
-
-    elif model_name == 'base-concat':
-        if emb_size is None:
-            return BaseConcat.from_pre_trained(vocab, class_count, mode, update_vectors)
-        else:
-            return BaseConcat.from_random(len(vocab), emb_size, class_count, mode)
 
     elif model_name == 'ower':
         if emb_size is None:
