@@ -67,6 +67,7 @@ def main():
                 args.log_dir = f'runs/vectors/{dataset}_{model}_{vectors}'
                 args.model = model
                 args.save_dir = f'models/vectors/{dataset}_{model}_{vectors}'
+                args.vectors = vectors
 
                 logging.info(f'Training on dataset {dataset} using model {model} with vectors {vectors}')
                 train(args)
