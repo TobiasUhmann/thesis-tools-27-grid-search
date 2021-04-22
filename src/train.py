@@ -111,6 +111,12 @@ def parse_args():
                         help='Pre-trained word embeddings, ignored if --vectors is set'
                              ' (default: {})'.format(default_vectors))
 
+    default_weight_factor = 1.0
+    parser.add_argument('--weight-factor', dest='weight_factor', type=float, metavar='FLOAT',
+                        default=default_weight_factor,
+                        help="Factor by which to multiply the loss function's class weights,"
+                             " no class weights applied if set to 0.0 (default: {})".format(default_weight_factor))
+
     args = parser.parse_args()
 
     #
@@ -162,6 +168,7 @@ def train(args):
     tokenizer = args.tokenizer
     update_vectors = args.update_vectors
     vectors = args.vectors
+    weight_factor = args.weight_factor
 
     #
     # Check that (input) OWER Directory exists
@@ -224,7 +231,10 @@ def train(args):
     _, train_classes_stack, _ = zip(*train_set)
     train_freqs = np.array(train_classes_stack).mean(axis=0)
 
-    class_weights = tensor(1 / train_freqs)
+    if weight_factor == 0.0:
+        class_weights = None
+    else:
+        class_weights = tensor(1 / train_freqs * weight_factor)
 
     #
     # Create model

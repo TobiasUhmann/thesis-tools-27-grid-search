@@ -27,9 +27,9 @@ def main():
     args.sent_len = 64
     args.test = True
     args.tokenizer = 'spacy'
-    # args.update_vectors
+    args.update_vectors = True
     args.vectors = 'glove.6B.300d'
-    args.weight_factor = 1.0
+    # args.weight_factor
 
     dataset_choices = [
         ('ower-v4-cde-cde-100-1', 1),
@@ -46,16 +46,16 @@ def main():
 
     for dataset, sent_count in dataset_choices:
         for model in ['base', 'ower']:
-            for update_vectors in [False, True]:
+            for weight_factor in [None, 0.5, 1.0, 2.0]:
                 args.ower_dir = f'data/ower/{dataset}'
                 args.sent_count = sent_count
 
-                args.log_dir = f'runs/update_vectors/{dataset}_{model}_{update_vectors}'
+                args.log_dir = f'runs/weight_factor/{dataset}_{model}_{weight_factor}'
                 args.model = model
-                args.save_dir = f'models/update_vectors/{dataset}_{model}_{update_vectors}'
-                args.update_vectors = update_vectors
+                args.save_dir = f'models/weight_factor/{dataset}_{model}_{weight_factor}'
+                args.weight_factor = weight_factor
 
-                logging.info(f'Training on dataset {dataset} using model {model} with update vectors {update_vectors}')
+                logging.info(f'Training on dataset {dataset} using model {model} with weight factor {weight_factor}')
                 train(args)
 
 

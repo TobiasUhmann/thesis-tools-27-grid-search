@@ -29,6 +29,7 @@ def main():
     args.tokenizer = 'spacy'
     args.update_vectors = True
     args.vectors = 'glove.6B.300d'
+    args.weight_factor = 1.0
 
     dataset_choices = [
         ('ower-v4-fb-irt-100-1-1', 1),
