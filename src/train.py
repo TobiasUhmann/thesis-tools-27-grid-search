@@ -106,7 +106,7 @@ def parse_args():
     parser.add_argument('--update-vectors', dest='update_vectors', action='store_true',
                         help='Update pre-trained word embeddings during training')
 
-    default_vectors = 'glove.6B.300d'
+    default_vectors = 'fasttext.simple.300d'
     parser.add_argument('--vectors', dest='vectors', metavar='STR', default=default_vectors,
                         help='Pre-trained word embeddings, ignored if --vectors is set'
                              ' (default: {})'.format(default_vectors))

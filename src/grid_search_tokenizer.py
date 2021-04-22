@@ -28,7 +28,7 @@ def main():
     args.test = True
     # args.tokenizer
     args.update_vectors = True
-    args.vectors = 'glove.6B.300d'
+    args.vectors = 'fasttext.simple.300d'
     args.weight_factor = 1.0
 
     dataset_choices = [
