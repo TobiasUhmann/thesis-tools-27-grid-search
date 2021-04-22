@@ -11,7 +11,7 @@ import torch
 from sklearn.metrics import precision_recall_fscore_support
 from torch import Tensor, tensor
 from torch.nn import BCEWithLogitsLoss
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchtext.vocab import Vocab
@@ -86,6 +86,11 @@ def parse_args():
     parser.add_argument('--model', dest='model', choices=model_choices, default=default_model_choice,
                         help='Classifier to be trained (default: {})'.format(default_model_choice))
 
+    optimizer_choices = ['adam', 'sgd']
+    default_optimizer = 'adam'
+    parser.add_argument('--optimizer', dest='optim', choices=optimizer_choices, default=default_optimizer,
+                        help='Optimizer, one of {} (default: {})'.format(optimizer_choices, default_optimizer))
+
     default_save_dir = None
     parser.add_argument('--save-dir', dest='save_dir', metavar='STR', default=default_save_dir,
                         help='Model save directory (default: {})'.format(default_save_dir))
@@ -137,6 +142,7 @@ def parse_args():
     logging.info('    {:24} {}'.format('--lr', args.lr))
     logging.info('    {:24} {}'.format('--mode', args.mode))
     logging.info('    {:24} {}'.format('--model', args.model))
+    logging.info('    {:24} {}'.format('--optimizer', args.optimizer))
     logging.info('    {:24} {}'.format('--save-dir', args.save_dir))
     logging.info('    {:24} {}'.format('--sent-len', args.sent_len))
     logging.info('    {:24} {}'.format('--test', args.test))
@@ -162,6 +168,7 @@ def train(args):
     lr = args.lr
     mode = args.mode
     model_name = args.model
+    optim = args.optim
     save_dir = args.save_dir
     sent_len = args.sent_len
     test = args.test
@@ -242,7 +249,13 @@ def train(args):
 
     model = create_model(model_name, emb_size, vocab, class_count, mode, update_vectors, activation).to(device)
 
-    optimizer = Adam(model.parameters(), lr=lr)
+    if optim == 'adam':
+        optimizer = Adam(model.parameters(), lr=lr)
+    elif optim == 'sgd':
+        optimizer = SGD(model.parameters(), lr=lr, momentum=0.9)
+    else:
+        raise ValueError(f"Invalid optimizer '{optim}'. Must be one of {['adam', 'sgd']}")
+
     criterion = BCEWithLogitsLoss(pos_weight=class_weights.to(device))
 
     writer = SummaryWriter(log_dir=log_dir)

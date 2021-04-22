@@ -23,6 +23,7 @@ def main():
     args.lr = 0.01
     # args.mode
     # args.model
+    args.optimizer = 'adam'
     # args.save_dir
     args.sent_len = 64
     args.test = True

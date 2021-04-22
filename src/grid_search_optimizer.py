@@ -23,6 +23,7 @@ def main():
     # args.lr
     args.mode = 'mean'
     # args.model
+    # args.optimizer
     # args.save_dir
     args.sent_len = 64
     args.test = True
@@ -46,17 +47,20 @@ def main():
 
     for dataset, sent_count in dataset_choices:
         for model in ['base', 'ower']:
-            for lr in [1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001]:
-                args.ower_dir = f'data/ower/{dataset}'
-                args.sent_count = sent_count
+            for optimizer in ['adam', 'sgd']:
+                for lr in [1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001]:
+                    args.ower_dir = f'data/ower/{dataset}'
+                    args.sent_count = sent_count
 
-                args.log_dir = f'runs/lr/{dataset}_{model}_{lr}'
-                args.lr = lr
-                args.model = model
-                args.save_dir = f'models/lr/{dataset}_{model}_{lr}'
+                    args.log_dir = f'runs/optimizer/{dataset}_{model}_{optimizer}_{lr}'
+                    args.lr = lr
+                    args.model = model
+                    args.optimizer = optimizer
+                    args.save_dir = f'models/optimizer/{dataset}_{model}_{optimizer}_{lr}'
 
-                logging.info(f'Training on dataset {dataset} using model {model} with learning rate {lr}')
-                train(args)
+                    logging.info(f'Training on dataset {dataset} using model {model}'
+                                 f' with optimizer {optimizer} and learning rate {lr}')
+                    train(args)
 
 
 if __name__ == '__main__':
