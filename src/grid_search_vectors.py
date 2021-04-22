@@ -17,7 +17,7 @@ def main():
     args.batch_size = 1024
     args.device = 'cuda'
     args.emb_size = None
-    args.epoch_count = 200
+    args.epoch_count = 100
     # args.log_dir
     args.log_steps = False
     args.lr = 0.01
