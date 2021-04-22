@@ -23,7 +23,7 @@ def main():
     # args.lr
     args.mode = 'mean'
     # args.model
-    # args.optimizer
+    # args.optim
     # args.save_dir
     args.sent_len = 64
     args.test = True
