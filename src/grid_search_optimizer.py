@@ -55,7 +55,7 @@ def main():
                     args.log_dir = f'runs/optimizer/{dataset}_{model}_{optimizer}_{lr}'
                     args.lr = lr
                     args.model = model
-                    args.optimizer = optimizer
+                    args.optim = optimizer
                     args.save_dir = f'models/optimizer/{dataset}_{model}_{optimizer}_{lr}'
 
                     logging.info(f'Training on dataset {dataset} using model {model}'
