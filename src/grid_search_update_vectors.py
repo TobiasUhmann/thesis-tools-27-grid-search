@@ -28,7 +28,7 @@ def main():
     args.test = True
     args.tokenizer = 'spacy'
     # args.update_vectors
-    args.vectors = 'fasttext.simple.300d'
+    # args.vectors
     args.weight_factor = 1.0
 
     dataset_choices = [
@@ -46,17 +46,20 @@ def main():
 
     for dataset, sent_count in dataset_choices:
         for model in ['base', 'ower']:
-            for update_vectors in [False, True]:
-                args.ower_dir = f'data/ower/{dataset}'
-                args.sent_count = sent_count
+            for vectors in ['charngram.100d', 'fasttext.simple.300d', 'glove.6B.300d']:
+                for update_vectors in [False, True]:
+                    args.ower_dir = f'data/ower/{dataset}'
+                    args.sent_count = sent_count
 
-                args.log_dir = f'runs/update_vectors/{dataset}_{model}_{update_vectors}'
-                args.model = model
-                args.save_dir = f'models/update_vectors/{dataset}_{model}_{update_vectors}'
-                args.update_vectors = update_vectors
+                    args.log_dir = f'runs/update/{dataset}_{model}_{vectors}_{update_vectors}'
+                    args.model = model
+                    args.save_dir = f'models/update/{dataset}_{model}_{vectors}_{update_vectors}'
+                    args.update_vectors = update_vectors
+                    args.vectors = vectors
 
-                logging.info(f'Training on dataset {dataset} using model {model} with update vectors {update_vectors}')
-                train(args)
+                    logging.info(f'Training on dataset {dataset} using model {model}'
+                                 f' with vectors {vectors} and update vectors {update_vectors}')
+                    train(args)
 
 
 if __name__ == '__main__':
