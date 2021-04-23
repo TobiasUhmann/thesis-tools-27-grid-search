@@ -256,7 +256,10 @@ def train(args):
     else:
         raise ValueError(f"Invalid optimizer '{optim}'. Must be one of {['adam', 'sgd']}")
 
-    criterion = BCEWithLogitsLoss(pos_weight=class_weights.to(device))
+    if class_weights is None:
+        criterion = BCEWithLogitsLoss()
+    else:
+        criterion = BCEWithLogitsLoss(pos_weight=class_weights.to(device))
 
     writer = SummaryWriter(log_dir=log_dir)
 
