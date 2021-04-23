@@ -47,7 +47,7 @@ def main():
 
     for dataset, sent_count in dataset_choices:
         for model in ['base', 'ower']:
-            for weight_factor in [None, 0.5, 1.0, 2.0]:
+            for weight_factor in [0, 0.5, 1.0, 2.0]:
                 args.ower_dir = f'data/ower/{dataset}'
                 args.sent_count = sent_count
 
